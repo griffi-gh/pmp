@@ -86,20 +86,20 @@ local function run_step(s, tick)
   end
   
   --Get current state
-  local state = {this:read(0), this:read(1), this:read(2), this:read(3)}
+  local in_state = {this:read(0), this:read(1), this:read(2), this:read(3)}
   
   --if prev_state is nil, just set it to the current state
   if not s.prev_state then
-    s.prev_state = state
+    s.prev_state = in_state
   end
   
   --send updates
   for i=1,4 do
-    if s.prev_state[i] ~= state[i] then
-      s.prev_state = state
+    if s.prev_state[i] ~= in_state[i] then
+      s.prev_state = in_state
       local state_str = tostring(tick)..SEPARATOR
       for i=1,4 do
-        state_str = state_str..("%.7f"):format(state[i])..SEPARATOR
+        state_str = state_str..("%.7f"):format(in_state[i])..SEPARATOR
       end
       state_str = state_str:sub(1, -2)
       s.client:send(MSG_STATE..state_str..MSG_END)

@@ -79,7 +79,7 @@ local function run(options)
               --Should I check if another client has the same id?
               -- x no that because every controller activates by default
             elseif msg:sub(1, 1) == MSG_STATE then
-              print("value changed")
+              print("value changed by client "..client.id)
               print(msg:sub(2, -1))
               for _, client in ipairs(clients) do
                 client.sock:send(msg..MSG_END)
