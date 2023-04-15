@@ -4,6 +4,7 @@ local SERVER = {"127.0.0.1",3333}
 
 --COMMON--
 local PROTOCOL_VERSION = string.char(0x01)
+local BUCKET_SIZE = 120
 local SEPARATOR = "/"
 local MSG_END = "\r\n"
 local MSG_CONN = string.char(0x01)
@@ -51,17 +52,48 @@ local function run_init(options)
   client:settimeout(0)
   
   return {
+    dead = false,
     options = options,
     client = client,
-    prev_state = {},
+    next_state = nil,
+    prev_state = nil,
+    state = nil,
+    out_state = {0,0,0,0},
   }
 end
 
 local function run_step(s, tick)
+  if s.dead then return end
+  --Check messages
+  local msg, err = s.client:receive()
+  if msg then
+    if msg:sub(1, 1) == MSG_STATE then
+      local tokens = {}
+      for token in msg:sub(2,-1):gmatch("[^/]+") do
+        tokens[#tokens + 1] = tonumber(token)
+      end
+      local change_tick = tokens[1]
+      table.remove(tokens, 1)
+      if math.floor(change_tick / BUCKET_SIZE) ~= math.floor(tick / BUCKET_SIZE) then
+        --s.dead = true
+        --error("Client time out of sync")
+        return
+      end
+      s.next_state = tokens
+    else
+      error("Unsupported message")
+    end
+  end
+  
+  --Get current state
   local state = {this:read(0), this:read(1), this:read(2), this:read(3)}
-  if not s.prev_state[1] then
+  
+  --if prev_state is nil, just set it to the current state
+  if not s.prev_state then
     s.prev_state = state
   end
+  
+  --send updates
   for i=1,4 do
     if s.prev_state[i] ~= state[i] then
       s.prev_state = state
@@ -74,6 +106,19 @@ local function run_step(s, tick)
       break
     end
   end
+  
+  --detect bucket change and apply next state
+  if (tick % (BUCKET_SIZE + 1)) == 0 then
+    if s.next_state then
+      s.out_state, s.prev_state, s.next_state = s.next_state, s.next_state, nil
+    end
+  end
+  
+  --write output
+  this:write(0, s.out_state[1])
+  this:write(1, s.out_state[2])
+  this:write(2, s.out_state[3])
+  this:write(3, s.out_state[4])
 end
 
 local function run_principia()
