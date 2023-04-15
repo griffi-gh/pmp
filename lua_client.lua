@@ -57,13 +57,15 @@ local function run_init(options)
   }
 end
 
-local function run_step(s)
+local function run_step(s, tick)
   local state = {this:read(0), this:read(1), this:read(2), this:read(3)}
+  if not s.prev_state[1] then
+    s.prev_state = state
+  end
   for i=1,4 do
     if s.prev_state[i] ~= state[i] then
       s.prev_state = state
-      --local state_data = { unpack(state) }
-      local state_str = ""
+      local state_str = tostring(tick)..SEPARATOR
       for i=1,4 do
         state_str = state_str..("%.7f"):format(state[i])..SEPARATOR
       end
@@ -79,8 +81,8 @@ local function run_principia()
   function init()
     state = run_init { ip = SERVER[1], port = SERVER[2] }
   end
-  function step()
-    run_step(state)
+  function step(count)
+    run_step(state, count)
   end
 end
 

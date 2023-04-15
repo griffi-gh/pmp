@@ -75,7 +75,8 @@ local function run(options)
             elseif msg:sub(1, 1) == MSG_SETID then
               client.ctrl_id = tonumber(msg:sub(2, -1))
               print(("client %d updated it's controller id: %d"):format(client.id, client.ctrl_id))
-              --TODO: Check if another client has the same id
+              --Should I check if another client has the same id?
+              -- x no that because every controller activates by default
             elseif msg:sub(1, 1) == MSG_STATE then
               print("value changed")
               print(msg:sub(2, -1))
