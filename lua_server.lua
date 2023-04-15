@@ -1,6 +1,6 @@
 --COMMON--
 local PROTOCOL_VERSION = string.char(0x01)
-local BUCKET_SIZE = 120
+local APPLY_DELAY = 240
 local SEPARATOR = "/"
 local MSG_END = "\r\n"
 local MSG_CONN = string.char(0x01)

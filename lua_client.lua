@@ -4,7 +4,7 @@ local SERVER = {"127.0.0.1",3333}
 
 --COMMON--
 local PROTOCOL_VERSION = string.char(0x01)
-local BUCKET_SIZE = 120
+local APPLY_DELAY = 240 --maybe switch back to buckets?
 local SEPARATOR = "/"
 local MSG_END = "\r\n"
 local MSG_CONN = string.char(0x01)
@@ -55,15 +55,15 @@ local function run_init(options)
     dead = false,
     options = options,
     client = client,
-    next_state = nil,
     prev_state = nil,
-    state = nil,
     out_state = {0,0,0,0},
+    queue = {},
   }
 end
 
 local function run_step(s, tick)
   if s.dead then return end
+  
   --Check messages
   local msg, err = s.client:receive()
   if msg then
@@ -74,12 +74,9 @@ local function run_step(s, tick)
       end
       local change_tick = tokens[1]
       table.remove(tokens, 1)
-      if math.floor(change_tick / BUCKET_SIZE) ~= math.floor(tick / BUCKET_SIZE) then
-        --s.dead = true
-        --error("Client time out of sync")
-        return
-      end
-      s.next_state = tokens
+      --TODO check for existing queued items
+      --TODO check if within delay
+      s.queue[change_tick] = tokens
     else
       error("Unsupported message")
     end
@@ -97,7 +94,7 @@ local function run_step(s, tick)
   for i=1,4 do
     if s.prev_state[i] ~= in_state[i] then
       s.prev_state = in_state
-      local state_str = tostring(tick)..SEPARATOR
+      local state_str = tostring(tick + APPLY_DELAY)..SEPARATOR
       for i=1,4 do
         state_str = state_str..("%.7f"):format(in_state[i])..SEPARATOR
       end
@@ -107,11 +104,9 @@ local function run_step(s, tick)
     end
   end
   
-  --detect bucket change and apply next state
-  if (tick % (BUCKET_SIZE + 1)) == 0 then
-    if s.next_state then
-      s.out_state, s.next_state = s.next_state, nil
-    end
+  --check if queued
+  if s.queue[tick] then
+    s.out_state, s.queue[tick] = s.queue[tick], nil
   end
   
   --write output
