@@ -4,7 +4,7 @@ local SERVER = {"127.0.0.1",3333}
 
 --COMMON--
 local PROTOCOL_VERSION = string.char(0x01)
-local APPLY_DELAY = 240 --maybe switch back to buckets?
+local APPLY_DELAY = 60 --maybe switch back to buckets?
 local SEPARATOR = "/"
 local MSG_END = "\r\n"
 local MSG_CONN = string.char(0x01)
