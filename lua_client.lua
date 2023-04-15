@@ -110,7 +110,7 @@ local function run_step(s, tick)
   --detect bucket change and apply next state
   if (tick % (BUCKET_SIZE + 1)) == 0 then
     if s.next_state then
-      s.out_state, s.prev_state, s.next_state = s.next_state, s.next_state, nil
+      s.out_state, s.next_state = s.next_state, nil
     end
   end
   
